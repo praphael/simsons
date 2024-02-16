@@ -1,10 +1,9 @@
 
 // document.onload = render();
 // document.addEventListener("DOMContentLoaded", onInitialLoad);
+let appState={isLoggedIn:false, username:"", usertoken:"", posts:[] };
 
 function onInitialLoad() {
-    if(!window.hasOwnProperty("appState"))
-        var appState={isLoggedIn:false, username:"", usertoken:"", posts:[] };
     console.log("onInitialLoad() appState= " + JSON.stringify(appState));
     renderLogin();
 }
@@ -22,7 +21,7 @@ function renderLogin() {
     h3.innerHTML="Foo to Simsoms";
     div1 = document.createElement("div");
     div1.setAttribute("class", "h-100 d-flex align-items-center justify-content-center");
-    frm = document.createElement("form");
+    frm = document.createElement("div");
     frm.setAttribute("id", "login_form");
     // frm.setAttribute("action", "../login");
     frm.setAttribute("method", "get");
@@ -42,7 +41,7 @@ function renderLogin() {
     btn = document.createElement("input");
     btn.setAttribute("type", "submit");
     btn.setAttribute("class", "btn btn-primary");
-    frm.setAttribute("onsubmit", "onLoginSubmit()");
+    frm.setAttribute("onclick", "onLoginSubmit()");
     btn.innerHTML="Login";
     login_msg = document.createElement("div");
     login_msg.setAttribute("id", "login_msg");
@@ -96,7 +95,7 @@ async function onLoginSubmit() {
 }
 
 async function fetchFeed() {
-    const url = "../getfeed/" + appState.username;
+    const url = "./getfeed/" + appState.username;
     req_body = {user_token: appState.usertoken };
     post_data = { method:"POST",
         headers: {
@@ -124,29 +123,82 @@ async function fetchFeed() {
     }
 }
 
-function renderFeed() {
-    /*
-    div1 = document.createElement("div");
-    div1.setAttribute("id", "div1");
-    div1.setAttribute("class", "d-flex align-items-center justify-content-center");
-*/
-    appState.posts.forEach(ele => {
-        console.log(ele);
-        /*
-        [u, p, t] = ele;
-        pdiv = document.createElement("div");
-        usr = document.createElement("div");
-        usr.innerText = u;
-        pst = document.createElement("div");
-        pst.innerText = p;
-        tm = document.createElement("div");
-        tm.innerText = t;
-        pdiv.replaceChildren(usr, pst, tm);
-        div1.appendChild(pdiv);
-        */
+async function postMessage() {
+    const url = "./postmsg/" + appState.username;
+    msg_txt = document.getElementById('post_txt').value;
+    req_body = {user_token: appState.usertoken, msg : msg_txt };
+    post_data = { method:"POST",
+        headers: {
+            "Content-Type": "application/json"
+        }, 
+        body: JSON.stringify(req_body) };
+    
+    console.log("postmessage post_data= " + JSON.stringify(post_data));
+    console.log("postmessage calling fetch() url=" + url);
+    let data = await fetch(url, post_data)
+        .then((res) => {
+            statusCode = res.status; 
+            return res.text();
+        })
+        .then(data => {
+            return JSON.parse(data);
+        })
+        .catch(error => {
+            console.error(error);
     });
 
-    // document.getElementById("main_div").replaceChildren(div1);
+    if (statusCode == 200) {
+        console.log("postmessage success");
+        fetchFeed();
+        renderFeed();
+    }
+}
+
+function renderFeed() {
+    div1 = document.createElement("div");
+    div1.setAttribute("id", "div1");
+    div1.setAttribute("class", "container-fluid");
+    ctl_div = document.createElement("div");
+    ctl_div.setAttribute("id", "ctl_div");
+    ctl_div.setAttribute("class", "h-100 d-flex");
+    post_txt = document.createElement("input");
+    post_txt.setAttribute("id", "post_txt");
+    post_txt.setAttribute("type", "text");
+    post_txt.setAttribute("class", "form-control");    
+    ctl_div.appendChild(post_txt);
+    post_btn = document.createElement("button");
+    post_btn.innerText = "Post";
+    post_btn.setAttribute("id", "post_btn");
+    post_btn.setAttribute("class", "btn btn-primary");
+    post_btn.setAttribute("onclick", "postMessage()");
+    ctl_div.appendChild(post_btn);
+    logout_btn = document.createElement("button");
+    logout_btn.innerText = "Logout";
+    logout_btn.setAttribute("id", "logout_btn");
+    logout_btn.setAttribute("class", "btn btn-danger");
+    ctl_div.appendChild(logout_btn);
+    div1.appendChild(ctl_div)
+    appState.posts.forEach(ele => {
+        console.log(ele);
+        [u, p, t] = ele;
+        pdiv = document.createElement("div");
+        pdiv.setAttribute("class", "row");
+        usr = document.createElement("div");
+        usr.setAttribute("class", "col-2");
+        tm = document.createElement("div");
+        tm.setAttribute("class", "col-2");
+        d = new Date(t*1000);
+        tm.innerText = d.toLocaleDateString() + " " + d.toLocaleTimeString();
+        usr.innerText = u;
+        pst = document.createElement("div");
+        pst.setAttribute("class", "container-fluid");
+        pst.innerText = p;
+        
+        pdiv.replaceChildren(usr, tm, pst);
+        div1.appendChild(pdiv);
+    });
+
+    document.getElementById("main_div").replaceChildren(div1);
     console.log("renderFeed() success");
     console.log("renderFeed() appState.isLoggedIn= " + appState.isLoggedIn + " username="+ appState.username);    
 }

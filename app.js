@@ -1,5 +1,4 @@
 const express = require('express')
-// const cookies = require('cookie-session')
 const bodyParser = require('body-parser');
 const crypto = require('crypto');
 const path = require('path');
@@ -22,15 +21,6 @@ publicPath = path.join(__dirname, '')
 console.log("Serving static files from " + publicPath)
 app.use('/', express.static(publicPath));
 
-/*
-app.use(cookieSession({
-  name: 'session',
-  keys: [],
-
-  // Cookie Options
-  maxAge: 24 * 60 * 60 * 1000 // 24 hours
-}))
-*/
 
 app.get('/', (req, res) => {
   res.type('text/html')
@@ -86,11 +76,6 @@ app.post('/login/:uname', bodyParser.json(), (req, res) => {
     res.statusCode = 400;
     
     res.send({"error": "Bad login"});
-
-    // res.type('text/html');
-    // res.set('Set-Cookie', 'tok='+tok);
-    // redirPath = '/getfeed/' + uname;
-    // res.redirect(redirPath);
 })
 
 function validateLogin(req, res) {
@@ -134,8 +119,10 @@ function validateLogin(req, res) {
 
 app.post('/getfeed/:uname', bodyParser.json(), (req, res) => {
   if (!validateLogin(req, res)) return;
+  uname = req.params.uname;
   qy = "SELECT author, content, post_time_utc FROM posts WHERE author IN " +
-            " (SELECT sub_to FROM subs WHERE username='" + req.params.uname + "')" + 
+            " (SELECT sub_to FROM subs WHERE username='" + uname + "'" +
+            "  UNION SELECT '" + uname + "')" +
             " ORDER BY post_time_utc DESC LIMIT " + maxPosts;
   // console.log(qy);
   res.type('json');
