@@ -46,7 +46,7 @@ app.post('/login/:uname', bodyParser.json(), (req, res) => {
     if( "uname" in req.params) {
       uname = req.params.uname;
       if ("body" in req) {
-        console.log("login req.body=" + JSON.stringify(req.body));
+        // console.log("login req.body=" + JSON.stringify(req.body));
         if("passwd" in req.body) {
           passwd = req.body["passwd"];
           // TODO validate username/password
@@ -83,7 +83,7 @@ function validateLogin(req, res) {
   
   if("uname" in req.params) {
     uname = req.params.uname;
-    console.log("validateLogin: req.body= " + JSON.stringify(req.body));
+    // console.log("validateLogin: req.body= " + JSON.stringify(req.body));
     if ('user_token' in req.body) {
       tok = req.body['user_token'];
       if(user_tokens.has(uname)) {
@@ -167,7 +167,7 @@ app.post('/postmsg/:uname', bodyParser.json(), (req, res) => {
   });
 
   const t1 = Date.now()
-  console.log("req.body " + JSON.stringify(req.body))
+  // console.log("req.body " + JSON.stringify(req.body))
   const r = {$a : req.params.uname, $c : req.body['msg'], $t : t1 / 1000};
   // console.log(r)
   stmt.run(r, (e) => { 
