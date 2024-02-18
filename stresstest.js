@@ -24,9 +24,14 @@ async function loginUser(userName) {
         const response = await axios.post(baseURL + 'login/' + userName, {
             "passwd": ''
         });
-        // console.log(response);
-        token = response.data.usertoken;
-        userTokens.set(userName, token);
+        // console.log(JSON.stringify(response.data));
+        if(!(response.data.hasOwnProperty("usertoken"))) {
+          console.log("error 'usertoken' not present in data");
+        } else {
+          token = response.data.usertoken;
+          // console.log(userName + " token= " + token);
+          userTokens.set(userName, token);
+        }
     }
     catch(error) {
         console.log(error);
@@ -38,6 +43,7 @@ async function getFeed(userName, token) {
     try {
         const response = await axios.post(baseURL + 'getfeed/' + userName, {
             "user_token": token });
+        
         feed = response.data.posts;
         // console.log(feed);
     }
@@ -48,7 +54,7 @@ async function getFeed(userName, token) {
 
 async function postMsg(userName, token, msg) {
     try {
-        const response = await axios.post(baseURL + 'postMsg/' + userName, {
+        const response = await axios.post(baseURL + 'postmsg/' + userName, {
             "user_token": token, 
             "msg" : msg });
         feed = response.data.posts;
@@ -59,12 +65,12 @@ async function postMsg(userName, token, msg) {
     };
 }
 
-const numUsers = 100;
-const numPosts = 500; 
+const numUsers = 1;
+const numPosts = 10; 
 
 async function loginAllUsers() {
     proms = [];
-    const batchSize = 2;
+    const batchSize = Math.min(numUsers, 2);
     for(i=1; i<=numUsers; i++) {
         userName = 'user' + i
         proms.push(loginUser(userName));
@@ -77,13 +83,16 @@ async function loginAllUsers() {
 async function getAllFeeds() {
     for(i=1; i<=numUsers; i++) {
         userName = 'user' + i;
-        await getFeed(userName, userTokens.get(userName));
+        if (userTokens.has(userName)) 
+          await getFeed(userName, userTokens.get(userName));
+        else 
+          console.log(userName + " has no token in userTokens");
     }
 }
 
 async function makePosts() {
     proms = [];
-    const batchSize = 50;
+    const batchSize = Math.min(numPosts, 5);
     for(i=1; i<=numPosts; i++) {
         j = i % numUsers + 1;
         userName = 'user' + j;
@@ -115,11 +124,8 @@ async function stressTest() {
     await makePosts(userTokens);
     const t6 = performance.now();
     dt = t6-t5;
-    rps = numUsers/(dt/1000);
+    rps = numPosts/(dt/1000);
     console.log("Made all posts  dt= " + dt + " ms (" + rps + " RPS)");
-
-    makePosts
-
 }
 
 stressTest();
