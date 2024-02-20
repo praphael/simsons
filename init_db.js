@@ -28,8 +28,7 @@ db.serialize(() => {
     db.run('CREATE TABLE posts ( \
             author varchar(32), \
             content text, \
-            post_time_utc timestamptz, \
-            PRIMARY KEY(author, post_time_utc)\
+            post_time_utc timestamptz \
             )', (e) => {
                 if(e) console.log("ERROR create table 'posts'");
                 else console.log("create table 'posts' success");

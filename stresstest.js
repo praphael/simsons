@@ -1,7 +1,15 @@
 const axios=require('axios');
 //const axios = require('axios'); // legacy way
 
-const baseURL = 'http://127.0.0.1:3000/'
+const baseURL = 'http://127.0.0.1:3000/';
+
+const superToken = "baf1c8b62acd6899377960ce8f0edaf7391d8624";
+const useSuperToken = true;
+const numUsers = 100;
+const numPosts = 500; 
+const testLogin = false;
+const testGetFeed = true;
+const testPost = false;
 
 /*
 axios.get(baseURL + 'client.html')
@@ -29,7 +37,7 @@ async function loginUser(userName) {
           console.log("error 'usertoken' not present in data");
         } else {
           token = response.data.usertoken;
-          // console.log(userName + " token= " + token);
+          console.log(userName + " token= " + token);
           userTokens.set(userName, token);
         }
     }
@@ -65,9 +73,6 @@ async function postMsg(userName, token, msg) {
     };
 }
 
-const numUsers = 1;
-const numPosts = 10; 
-
 async function loginAllUsers() {
     proms = [];
     const batchSize = Math.min(numUsers, 2);
@@ -85,7 +90,9 @@ async function getAllFeeds() {
         userName = 'user' + i;
         if (userTokens.has(userName)) 
           await getFeed(userName, userTokens.get(userName));
-        else 
+        else if (useSuperToken) 
+          await getFeed(userName, superToken);
+        else
           console.log(userName + " has no token in userTokens");
     }
 }
@@ -106,26 +113,33 @@ async function makePosts() {
 
 
 async function stressTest() {
-    const t1 = performance.now();
-    await loginAllUsers();
-    const t2 = performance.now();
-    let dt = t2-t1;
-    rps = numUsers/(dt/1000);
-    console.log("All users logged in dt= " + dt + " ms (" + rps + " RPS)");
+    if(testLogin) {
+      const t1 = performance.now();
+      await loginAllUsers();
+      const t2 = performance.now();
+      let dt = t2-t1;
+      rps = numUsers/(dt/1000);
+      console.log("All users logged in dt= " + dt + " ms (" + rps + " RPS)");
 
-    const t3 = performance.now();
-    await getAllFeeds(userTokens);
-    const t4 = performance.now();
-    dt = t4-t3;
-    rps = numUsers/(dt/1000);
-    console.log("Got all users feeds dt= " + dt + " ms (" + rps + " RPS)");
+    }
 
-    const t5 = performance.now();
-    await makePosts(userTokens);
-    const t6 = performance.now();
-    dt = t6-t5;
-    rps = numPosts/(dt/1000);
-    console.log("Made all posts  dt= " + dt + " ms (" + rps + " RPS)");
+    if(testGetFeed) {
+      const t3 = performance.now();
+      await getAllFeeds(); 
+      const t4 = performance.now();
+      dt = t4-t3;
+      rps = numUsers/(dt/1000);
+      console.log("Got all users feeds dt= " + dt + " ms (" + rps + " RPS)");
+    }
+
+    if(testPost) {
+      const t5 = performance.now();
+      await makePosts();
+      const t6 = performance.now();
+      dt = t6-t5;
+      rps = numPosts/(dt/1000);
+      console.log("Made all posts  dt= " + dt + " ms (" + rps + " RPS)");
+    }
 }
 
 stressTest();
